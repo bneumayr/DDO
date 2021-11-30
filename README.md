@@ -1,5 +1,5 @@
 # DDO
-## Domain Object Hierarchies inducing Multi-Level Models - Proof-of-Concept Prototype in F-Logic
+Domain Object Hierarchies inducing Multi-Level Models - Proof-of-Concept Prototype in F-Logic
 
 This implementation of the DDO approach in F-Logic was developed and tested with Flora-2/ErgoLite Reasoner 2.0 (Pyrus nivalis) of 2018-10-14.
 

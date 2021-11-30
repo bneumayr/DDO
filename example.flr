@@ -1,0 +1,275 @@
+/*// --------- the SALES organisation hierarchy  ------------*/
+Sales : Hierarchy .
+
+SalesDivision : Class [
+  localTo -> Sales, 
+  level -> Division 
+].
+
+SalesEmployee : Class [
+  localTo -> Sales, 
+  level -> Employee,
+  partOfSchema -> SalesDivision
+].  
+
+SalesOutlet : Class [
+  localTo -> Sales, 
+  level -> Outlet,
+  partOfSchema -> SalesDivision
+].
+
+Vehicles : DomainObject [
+  instanceOf -> SalesDivision
+].
+
+Electronics : DomainObject [
+  instanceOf -> SalesDivision
+].
+
+MrWhite : DomainObject [
+  partOf -> Vehicles,
+  instanceOf -> SalesEmployee
+].
+
+MsJones : DomainObject [
+  partOf -> Vehicles,
+  instanceOf -> SalesEmployee
+].
+
+CarStoreVienna : DomainObject [
+  partOf -> Vehicles,
+   instanceOf -> SalesOutlet
+].
+
+BikesCarsLinz : DomainObject [
+  partOf -> Vehicles,
+  instanceOf -> SalesOutlet
+].
+
+MsBlack : DomainObject [
+  partOf -> Electronics,
+  instanceOf -> SalesEmployee
+].
+
+MsMuller : DomainObject [
+  partOf -> Electronics,
+  instanceOf -> SalesEmployee
+].
+
+EStoreVienna : DomainObject [
+  partOf -> Electronics,
+  instanceOf -> SalesOutlet
+].
+
+/*// --------- the PRODUCT hierarchy  ------------*/
+Product : Hierarchy .
+
+ProductCategory : Class [
+  localTo -> Product , 
+  level -> Category,
+  range(vatRate) -> \number,
+  range(distributedBy) -> SalesDivision 
+]. 
+
+ProductModel : Class [
+  localTo -> Product , 
+  level -> Model,
+  partOfSchema -> ProductCategory,
+  range(productMgr) -> SalesEmployee,
+  range(listPrice) -> \number,
+  range(vatRate) -> \number
+].
+
+ProductIndividual [
+  localTo -> Product , 
+  level -> Individual,
+  partOfSchema -> ProductModel,
+  range(soldPrice) -> \number,
+  range(soldAt) -> SalesOutlet,
+  range(soldTo) -> Customer,
+  range(vatRate) -> \number 
+].
+
+ProductCategory.l(Model) [
+  propagateAsRange(productMgr) 
+    -> c( distributedBy, Employee ),
+  propagateAsSharedValue(vatRate) -> vatRate
+].
+
+ProductCategory.l(Individual) [
+  propagateAsRange(soldAt) 
+    -> c( distributedBy, Outlet ),
+  propagateAsSharedValue(vatRate) 
+    -> vatRate 
+].
+
+ProductModel.powertype [
+  aggregate(avgListPrice) -> avg(listPrice) 
+].
+
+ProductIndividual.powertype [
+  aggregate(avgSoldPrice) -> avg(soldPrice) 
+].
+
+ProductModel.l(Individual).powertype [
+  aggregate(maxAvgSoldPricePerModel) 
+    -> max(avgSoldPrice) 
+].
+
+ProductCategory.(Individual).powertype [
+  aggregate(maxAvgSoldPricePerCategory) -> max(avgSoldPrice)
+].
+
+Car : DomainObject [
+  instanceOf -> ProductCategory ,
+  value(distributedBy) -> Vehicles ,
+  value(vatRate) -> 0.2 
+] .
+
+Car.l(Model) [
+  range(engineType) -> Engine.l(Type) ,
+  range(topSpeed) -> \number 
+].
+
+Car.l(Individual) [
+  range(engine) -> Engine.l(Individual),
+  range(maxSpeed) -> \number 
+].
+
+Car.l(Model).l(Individual) [
+  metarange(engine) -> Engine.l(Type).l(Individual) ,
+  propagateAsSharedValue(maxSpeed) -> topSpeed ,
+  propagateAsRange(engine) -> c( engineType, Individual ) 
+].
+
+Phone : DomainObject [
+  instanceOf -> ProductCategory ,
+  value(distributedBy) -> Electronics ,
+  value(vatRate) -> 0.16 
+] .
+
+V50 : DomainObject [ 
+  instanceOf -> ProductModel , 
+  partOf -> Car ,   
+
+  value(engineType) -> Vd4162T ,
+  value(productMgr) -> MrWhite ,
+  value(topSpeed) -> 190 ,
+  value(listPrice) -> 30000  
+].
+
+P911 : DomainObject [
+  instanceOf -> ProductModel ,
+  partOf -> Car ,
+
+  value(engineType) -> P3LTwinTurbo ,
+  value(productMgr) -> MsJones ,
+  value(topSpeed) -> 250 ,
+  value(listPrice) -> 120125 
+].
+
+IPhone6 : DomainObject [
+  instanceOf -> ProductModel ,
+  partOf -> Phone ,
+
+  value(productMgr) -> MsMuller ,
+  value(listPrice) -> 490 
+].
+
+MyCar : DomainObject [
+  instanceOf -> ProductIndividual , 
+  partOf -> V50 ,
+
+  value(soldPrice) -> 26000 ,
+  value(engine) -> Vd4162T_1 ,
+  value(soldAt) -> BikesCarsLinz ,
+  value(soldTo) -> Me 
+].
+
+AdasCar : DomainObject [
+  instanceOf -> ProductIndividual ,
+  partOf -> V50 ,
+
+  value(soldPrice) -> 27000 ,
+  value(engine) -> Vd4162T_2 ,
+  value(soldAt) -> CarStoreVienna ,
+  value(soldTo) -> Ada 
+].
+
+MiasCar : DomainObject [
+  instanceOf -> ProductIndividual ,
+  partOf -> P911 ,
+
+  value(soldPrice) -> 119000 ,
+  value(engine) -> P3TT_1 ,
+  value(soldAt) -> BikesCarsLinz ,
+  value(soldTo) -> Mia 
+].
+
+MiasPhone : DomainObject [
+  instanceOf -> ProductIndividual ,
+  partOf -> IPhone6 ,
+
+  value(soldPrice) -> 439 ,
+  value(soldAt) -> EStoreVienna ,
+  value(soldTo) -> Mia 
+] .
+
+JoesPhone : DomainObject [
+  instanceOf -> ProductIndividual ,
+  partOf -> IPhone6 ,
+
+  value(soldPrice) -> 459 ,
+  value(soldAt) -> EStoreVienna ,
+  value(soldTo) -> Joe
+] .
+
+
+/*// --------- the ENGINE hierarchy  ------------*/
+
+Engine : Hierarchy .
+
+EngineType : Class [
+  localTo -> Engine , 
+  level -> Type
+] .
+
+EngineIndividual : Class [
+  localTo -> Engine , 
+  level -> Individual ,
+  partOfSchema -> EngineType
+] .
+
+Vd4162T : DomainObject [ 
+  instanceOf -> EngineType 
+] .
+  
+Vd4162T_1 : DomainObject [
+  instanceOf -> EngineIndividual , 
+  partOf -> Vd4162T 
+] .
+
+Vd4162T_2 : DomainObject [ 
+  instanceOf -> EngineIndividual ,
+  partOf -> Vd4162T
+] .
+
+P3LTwinTurbo : DomainObject [ 
+  instanceOf -> EngineType 
+] .
+
+P3TT_1 : DomainObject [ 
+  instanceOf -> EngineIndividual , 
+  partOf -> P3LTwinTurbo
+] .
+
+/*// ----- objects not part of a hierarchy ------*/
+Me : Customer. 
+Ada : Customer.
+Mia : Customer.
+Joe : Customer.
+
+
+
+
+

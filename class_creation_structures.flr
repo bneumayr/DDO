@@ -1,0 +1,13 @@
+/*// \ref{eq:createLocal1} Create first-order local classes \done */
+k(?o,?k) [ localTo -> ?o, level -> ?k ] :-
+  ?o [ iof -> ?c ],
+  ?[ partOfSchemaT -> ?c, level -> ?k ].
+
+/*// \ref{eq:createLocal2} Create higher-order classes up to maxOrder \done */
+k(?c,?k) [ localTo -> ?c, level -> ?k ] :-   
+  ?_c [ partOfSchemaT -> ?c, level -> ?k ] ,
+  ?c.order < config.maxOrder.  
+ 
+/*// Every local class (of any order) has a powertype */
+?c [ powertype -> pow(?c) ] :- 
+  ?c [ localTo -> ?].   

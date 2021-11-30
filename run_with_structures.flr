@@ -1,0 +1,6 @@
+#include "prepare.flr"
+#include "class_creation_structures.flr" 
+#include "core.flr"
+#include "example.flr" 
+
+config [ maxOrder -> 3 ]. 

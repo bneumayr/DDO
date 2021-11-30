@@ -1,0 +1,262 @@
+/*// \ref{eq:iof1}: \done */
+?o [ iof -> ?c1 ] :-
+	?o[ partOf->?o1, instanceOf->?c ],
+  ?c1 [ level -> ?k, localTo -> ?o1 ], 
+  ?c [ level -> ?k ].
+
+/*// \ref{eq:iof2}: \done */  
+?c1 [ iof -> ?m ] :-
+  ?c1 [ localTo -> ?o, level -> ?k ],
+  ?m [ localTo -> ?c, level -> ?k ], 
+  ?o [ iof -> ?c ].
+  
+/*// \ref{eq:order}: \done */  
+?c [ order -> ?i ] :-
+  ?c.localTo [ order -> ?j ],
+  ?i \is ?j + 1.
+
+/*// \ref{eq:propagateUnderToMetaclasses}: \done */
+?m1 [ partOfSchema -> ?m2 ] :- 
+  ?m1 [ localTo -> ?c, level -> ?k1 ],
+  ?m2 [ localTo -> ?c, level -> ?k2 ],
+  ?c1 [ localTo -> ?x, level -> ?k1 ],
+  ?c2 [ localTo -> ?x, level -> ?k2 ],
+  ?c1[ partOfSchemaT->?c, partOfSchema -> ?c2],
+  ?c2 [ partOfSchemaT -> ?c ].
+
+/*// \ref{eq:propagateUnderToInstances}: \done */
+?c1 [ partOfSchema -> ?c2 ] :- 
+	?m1 [ partOfSchema -> ?m2 ],
+  ?c1 [ iof -> ?m1] , ?c2 [ iof->?m2 ],
+  ?c1 [ localTo -> ?x ], ?c2 [ localTo -> ?x].  
+
+/* // --------- DIRECT SUBCLASS-OF ---------*/  
+
+/*// \ref{eq:subclassParent}: */
+?c1 [ subclassOf -> ?c2 ] :-
+	?o1 [ partOf -> ?o2 ],
+  ?c1 [ localTo -> ?o1, level -> ?k],
+  ?c2 [ localTo -> ?o2, level -> ?k ].
+
+/*// \ref{eq:subclassSubclass}: */
+?m1 [ subclassOf -> ?m2 ] :-
+  ?m1 [ localTo -> ?c1, level -> ?k ],
+  ?m2 [ localTo -> ?c2, level -> ?k ],
+  ?c1 [ subclassOf -> ?c2 ].
+  
+/*// ---------- MLT ------------*/
+
+/*// \ref{eq:partitionsBase}: */
+?m [ partitions -> ?c ] :- 
+	?o : DomainObject, 
+  ?c [ localTo -> ?o, level->?k ],
+  ?c2 [ localTo -> ?o ],
+  ?m [ localTo -> ?c2, level -> ?k].
+  
+/*// \ref{eq:partitionsHigherOrder}: */
+?m1 [ partitions -> ?m2 ] :-
+  ?m1 [ localTo -> ?m, level -> ?k ],
+  ?m2 [ localTo -> ?c, level -> ?k ],
+  ?m [ partitions -> ?c ].
+
+/*// \ref{eq:subordinateBase}: */
+?m1 [ subordinateTo -> ?m2 ] :-
+	?o : DomainObject,
+  ?c1 [ localTo -> ?o, partOfSchema -> ?c2 ], 
+  ?m1 [ localTo -> ?c1, level -> ?k],
+  ?m2 [ localTo -> ?c2, level -> ?k].
+	 
+/*// \ref{eq:subordinateHigherOrder}: */
+?x [ subordinateTo -> ?y ] :-
+	?m [ subordinateTo -> ?m2 ],
+  ?x [ localTo -> ?m, level -> ?k ],
+  ?y [ localTo -> ?m2, level -> ?k].
+
+/* //FURTHER RULES NOT DISCUSSED IN DETAIL IN THE PAPER */
+   
+/*// Classes can be adressed via methods of the object they are local to, e.g., Car.l(Model).l(Individual) returns CarIndividualClassByModel */
+?o [ l(?k) -> ?c ] :-
+  ?c [ localTo -> ?o, level -> ?k ].     
+   
+?pow [ order -> ?i ] :-
+  ?[ powertype -> ?pow, order -> ?j ],
+  ?i \is ?j + 1.
+
+/*// Derive transitive closure of partOfSchema */
+?c1 [ partOfSchemaT -> ?c3 ] :-   
+	?c1 [ partOfSchema -> ?c2 ] ,
+	?c2 [ partOfSchemaT -> ?c3 ] .
+  
+?c1 [ partOfSchemaT -> ?c2] :-
+  ?c1 [ partOfSchema -> ?c2 ].  
+
+/*// Go to root of localTo-nesting structure */
+?o [ localToDO -> ?o ] :-
+  ?o : DomainObject . 
+
+?c [ localToDO -> ?do ] :-
+  ?x [ localToDO -> ?do ],
+  ?c [ localTo -> ?x ].
+  
+/*// subclassOfRT: recursive transitive closure of subclassOf */ 
+?c [ subclassOfRT -> ?c ] :-
+	?c.order > 0.
+
+?c1 [ subclassOfRT -> ?c2 ] :-
+	?c1.subclassOfRT [ subclassOfRT -> ?c2].
+
+?c1 [ subclassOfRT -> ?c2 ] :-
+  ?c1 [ subclassOf -> ?c2 ] .
+
+/*// Powertypes are included in subclassOfRT */ 
+?m1 [ subclassOfRT -> ?m2 ] :-
+	( ?c1 [ powertype -> ?m1 ] ; 
+		?m1 [ partitions -> ?c1 ]),
+	?c1 [ subclassOfRT -> ?c2 ],
+  ?c2 [ powertype -> ?m2 ]. 
+
+/*// Class Membership */
+?o [ memberOf -> ?c ] :-
+	?o.iof [ subclassOfRT -> ?c ].
+
+/*// Powertype Membership */
+?c [ memberOf -> ?pow ] :-
+  ?c2 [ powertype -> ?pow ],
+	?c [ subclassOfRT -> ?c2 ] .   
+  
+/*// propagateAsSharedValue induces shared property values  */
+?c [ shared(?p) -> ?v ] :-
+	?m [ propagateAsSharedValue(?p) -> ?p2 ],
+	?c [ memberOf -> ?m , localToDO -> ?o ],
+	?o [ value(?p2) -> ?v ].
+
+/*// propagateAsRange induces range refinements */
+?c [ range(?p) -> ?range ] :-
+	?m [ propagateAsRange(?p) -> c(?p2,?k) ],
+	?c [ memberOf -> ?m, localToDO -> ?o ],
+	?o [ value(?p2) -> ?o2 ],
+  ?range [ localTo -> ?o2, level -> ?k ].
+  
+/*// A shared value becomes a property value with every member */
+?o [ value(?p) -> ?v ] :-
+	?c [ shared(?p) -> ?v ],
+	?o [ memberOf -> ?c ] .
+
+/*// Calculate aggregated information */
+?c [ value(?p) -> ?v ] :-
+ 	?m [ aggregate(?p) -> ?exp ], 
+ 	?c [ memberOf -> ?m ],
+	eval(?c,?exp,?v).
+
+eval( ?ctx, sum(?p), ?y ) :- ?y \is 
+	sum{?v|?_x [memberOf->?ctx,value(?p)->?v]}.
+
+eval( ?ctx, avg(?p), ?y ) :- ?y \is 
+	avg{?v|?_x[memberOf->?ctx,value(?p)->?v]}.
+
+eval( ?ctx, max(?p), ?y )  :-  ?y \is 
+	max{?v|?_x[memberOf->?ctx,value(?p)->?v]}.
+
+eval( ?ctx, min(?p), ?y )  :-  ?y \is 
+	min{?v|?_x[memberOf->?ctx,value(?p)->?v]}. 
+
+/* //------- CONFORMANCE CHECKS ------- */
+  
+/*// A class can only be modeled as part of a class if both are local to the same object */
+error(partOfIsLocal,[?c1,?c2]) :- 
+	?c1[ partOfSchema -> ?c2 ],
+	\naf exists(?o)^(
+    ?c1 [ localTo -> ?o], ?c2 [ localTo -> ?o] ).
+
+/*// A class can only be local to one object */
+error(localToIsFunctional,[?c]) :-
+  ?c [ localTo -> ?o1 ],
+  ?c [ localTo -> ?o2 ],
+  ?o1 != ?o2.
+
+/*// The schema of the part-whole hierarchy forms a forest  */
+error(partOfFormsForest,[?c]) :- 
+	?c[ partOfSchema -> {?c1,?c2} ],
+	\naf ( 
+		?c1[partOfSchema->?c2]; 
+		?c2[partOfSchema->?c1];
+		?c1 = ?c2  ).
+
+/*// A class cannot be associated with multiple levels */
+error(levelIsFunctional,[?c]) :-
+  ?c [ level -> ?k1, level -> ?k2 ],  
+  ?k1 != ?k2.
+
+/*// Level names are unique for the classes local to the same object */
+error(levelUniqueLocally,[?c,?c1,?o,?k]) :-
+  {?c,?c1} [ localTo -> ?o, level -> ?k ],
+	?c != ?c1 .
+
+/*// A class cannot have multiple orders */
+error(orderIsFunctional,[?o]) :-
+	?o [order -> {?i1, ?i2}], ?i1 != ?i2.
+
+/*// An object cannot be direct part of multiple objects */
+error(partOfIsFunctional,[?o]) :-
+	?o [partOf -> {?o1, ?o2}], ?o1 != ?o2.
+
+/*// An object can only be direct instance of one class */
+error(iofIsFunctional,[?o]) :-
+	?o [iof -> {?c1, ?c2}], ?c1 != ?c2.
+
+/*// Classes that are modeled as part of another class cannot have direct instances */
+error(nonrootIofTopClass,[?o,?o1]) :-
+	?o [ partOf -> ?o1, iof->?c ], 
+  ?c [ partOfSchema -> ?_c2 ] .
+
+/*// A refined range must be a subclassRT of the original range */
+error(propRangeSpec,[?c1,?c2,?p,?c3,?c4]) :- 
+	?c1 [ subclassOfRT -> ?c2 ], 
+	?c1 [ range(?p) -> ?c3 	],
+	?c2 [ range(?p) -> ?c4 ],
+	\naf ( ?c3 [ subclassOfRT -> ?c4 ] ; 
+		?c3 = ?c4 ; ?c3 :: ?c4 ).
+
+/*// A refined metarange must be subclassRT of the original metarange */
+error(metarangeSpec,[?p,?m1,?m2,?m3,?m4]) :- 
+	?m1 [ subclassOfRT -> ?m2 ],
+	?m1 [ metarange(?p) -> ?m3 	],
+	?m2 [ metarange(?p) -> ?m4 ],
+	\naf ( ?m3 [ subclassOfRT -> ?m4 ] ).
+
+/*// If a class defines a range for a property, then the property must be instantiated by all member objects*/
+error(rangeNotInstantiated,[?o,?c,?p,?c2]) :- 
+	?o [ memberOf -> ?c ],
+	?c [ range(?p) -> ?c2 ],
+	\naf exists(?v)^( 
+		?o[ value(?p) -> ?v ] , 
+		( (  \+ isnumber{?v}, ?v [ memberOf -> ?c2 ] ) ; ?v : ?c2 )  
+	).
+
+/*// If a metaclass defines a metarange for a property, then all its member classes must define a range for that property */
+error(metarangeNotInst,[?c,?m,?p, ?m2]) :- 
+	?c [ memberOf -> ?m ],
+	?m [ metarange(?p) -> ?m2 ],
+	\naf exists(?c2)^( ?c [ range(?p) -> ?c2 ], 
+		?c2 [ memberOf -> ?m2 ] ).
+
+/*// Shared values must also conform to the property's range */
+error(sharedValueRange,[?c1,?c2,?p,?c3]) :- 
+	?c1 [ subclassOfRT -> ?c2 ],
+	?c2 [ range(?p) -> ?c3 ],
+	?c1 [ shared(?p) -> ?v ], 
+	\naf ( ( \+ isnumber{?v}, ?v [ memberOf -> ?c3 ] ) ; ?v : ?c3 ) .
+
+/*// Metarange-assertions must be consistent along subordination hierarchies */
+error(consistentMetarangeSubord,[?m1,?m2,?p]) :- 
+	?m1 [ metarange(?p) -> ?m3,
+		      subordinateTo -> ?m2 ],
+	?m2 [ metarange(?p) -> ?m4 ],
+	\naf ( ?m3 [ subordinateTo -> ?m4 ]  ) .
+
+/*// A metarange-assertion must be consistent with property range given with partitioned class*/
+error( propertyPartitioning, [?c,?m,?p] ) :- 
+	?m [ partitions -> ?c, 
+	        metarange(?p) -> ?m2 ],
+	?c[ range(?p) -> ?c2 ],
+	\naf ( ?m2 [ partitions -> ?c2 ]  ) .

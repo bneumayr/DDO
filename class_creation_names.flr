@@ -1,0 +1,39 @@
+/*// Create first order local classes */
+?new [ localTo -> ?o, level -> ?k] :-
+  ?o [ iof -> ?c ],
+  ?[ partOfSchemaT -> ?c, level -> ?k ],
+  name ( ?o.localToDO, ?o.orderName, ?k, ?o.by, ?new ).
+
+/*// Create higher-order local classes up to maxOrder */
+?new [ localTo -> ?c, level -> ?k ] :-
+  ?_c [ partOfSchemaT -> ?c, level -> ?k ],
+  ?c.order < config.maxOrder ,
+  name ( ?c.localToDO, ?c.orderName, ?k, ?c.by, ?new ) .
+
+/*// Every local class (of any order) has a powertype */
+?c [ powertype -> ?pow ] :- 
+  ?c [ localTo -> ?],
+  \symbol[ concat([PowertypeOf,?c]) -> ?pow ]@\basetype.   
+
+/* Create class name by string concatenation */  
+name ( ?do, ?orderName, ?level, ?by, ?name) :-
+  \symbol[ concat([?do,?level,?orderName,?by]) -> ?name ]@\basetype.      
+
+/* Associate order numbers with Names */  
+orderToName(0,'').
+orderToName(1,'Class').
+orderToName(2,'Metaclass').
+orderToName(3,'Metametaclass').
+orderToName(4,'Metametametaclass').     
+
+/* Derive the order name for every object */
+?o [ orderName -> ?oName ] :-
+  orderToName(?o.order,?oName) .
+
+/* Derive the partioned-by-Part of metaclass names */
+?o [ by -> '' ] :-
+  ?o : DomainObject .  
+?c [ by -> ?by ] :-
+  ?o [ l(?k) -> ?c ], 
+  ?o [ by -> ?o_by ],
+  \symbol[ concat([By,?k,?o_by]) -> ?by ]@\basetype.  

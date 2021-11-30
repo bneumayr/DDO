@@ -1,0 +1,21 @@
+/*// \ref{eq:hierarchyAsDO}: The hierarchy is treated as domain object at the generic Root level  \done */
+?o : DomainObject :-
+  ?o : Hierarchy . 
+  
+?o [ level -> Root ] :-
+  ?o : Hierarchy.  
+
+/*// \ref{eq:partOfRoot}: Domain objects at a top level of the part-whole hierarchy are direct parts of root object\done */
+?o [ partOf -> ?h ] :-
+  ?o [ instanceOf -> ?c ],
+  ?c [ localTo -> ?h ],  
+  \naf exists(?c2)^(?c [partOfSchema->?c2] ).
+
+/*// \ref{eq:levelAnnotation}: Domain objects are annotated with their level \done */  
+?o [ level -> ?k ] :-
+  ?o [ instanceOf -> ?c ], 
+  ?c [ level -> ?k ].
+
+/*// \ref{eq:orderDO}: Domain objects have order 0 \done */  
+?o [ order -> 0 ] :- 
+  ?o : DomainObject. 
